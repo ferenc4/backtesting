@@ -2,14 +2,14 @@ import time
 
 from backtest.bt import sample_growth_data, BuyAsapHoldStrategy, Backtest
 from backtest.rates import InMemoryRatesCollection
-from backtest.sample_data import ONE_YEAR
 
 
 def optimisation_test(sample_size=1, worker_count_options: [] = None):
     if worker_count_options is None:
         worker_count_options = []
-    rc = InMemoryRatesCollection.from_list(sample_growth_data())
-    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=int(ONE_YEAR * 0.1))
+    run_duration = int(100)
+    rc = InMemoryRatesCollection.from_list(sample_growth_data(run_duration * 3))
+    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=run_duration)
     time_sums = dict()
     print(f"Evaluating worker count options between {worker_count_options}")
     for sample_index in range(0, sample_size):
