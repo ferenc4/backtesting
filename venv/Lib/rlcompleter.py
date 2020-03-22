@@ -31,7 +31,7 @@ Notes:
 
 import atexit
 import builtins
-import __main__
+from backtest import __main__
 
 __all__ = ["Completer"]
 

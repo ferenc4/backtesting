@@ -1,4 +1,4 @@
-from codes.asset import AssetDescriptor
+from backtest.codes.asset import AssetDescriptor
 
 CCY_ASSET_CLASS = "FX"
 

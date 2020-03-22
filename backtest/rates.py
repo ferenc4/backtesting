@@ -7,8 +7,8 @@ from typing import Iterable, Any
 import pandas as pd
 from pandas import DataFrame
 
-from codes.asset import AssetDescriptor
-from codes.currencies import Ccy, AUD
+from backtest.codes.asset import AssetDescriptor
+from backtest.codes.currencies import Ccy
 
 RATE_FROM_NAME_COLUMN = 'from_name'
 RATE_TO_NAME_COLUMN = 'to_name'

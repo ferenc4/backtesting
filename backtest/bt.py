@@ -1,21 +1,17 @@
-import multiprocessing
-import traceback
 from concurrent.futures import Future
-from multiprocessing import Lock
-from typing import NamedTuple, Callable, Iterable
 import concurrent.futures
-import time
-from datetime import datetime, timedelta
+import concurrent.futures
+from concurrent.futures import Future
+from datetime import datetime
 from typing import NamedTuple, Callable, Iterable
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from numpy.matlib import random
 
-from codes.currencies import Ccy, AUD
-from rates import RatesCollection, Strategy, InMemoryRatesCollection, Rate, Indicator
+from backtest.codes.currencies import Ccy, AUD
+from backtest.rates import RatesCollection, Strategy, InMemoryRatesCollection, Indicator
+from backtest.sample_data import ONE_YEAR, sample_growth_data
 
-_ONE_YEAR = 365
 _SUMMARY_START_DT_COLUMN = "start_dt"
 _SUMMARY_PERCENTILE_COLUMN = "percentile"
 _SUMMARY_ANNUALISED_PERFORMANCE_COLUMN = "annualised_performance"
@@ -186,91 +182,10 @@ class Backtest:
         return current_run
 
 
-def sample_growth_data():
-    current_val = 100
-    rates = []
-    dt = datetime(2000, 1, 1)
-    for i in range(0, int(_ONE_YEAR * 0.3)):
-        rates.append(Rate(Ccy("sample1", "sample1"), AUD, dt, current_val))
-        current_val += current_val * random.randint(-32, 40) / float(100)
-        dt += timedelta(days=1)
-    return rates
-
-
-def run():
+def run(worker_count=1):
     rc = InMemoryRatesCollection.from_list(sample_growth_data())
-    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=int(_ONE_YEAR * 0.1))
-    summary = bt.run(4)
+    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=int(ONE_YEAR * 0.1))
+    summary = bt.run(worker_count)
     summary.print()
     summary.plot_dt_performance()
     summary.plot_percentile_performance()
-
-
-class WorkerCountTimeSum(NamedTuple):
-    worker_count: int
-    time_sum: float
-
-
-def optimisation_test(sample_size=1, min_workers=1, max_workers=4):
-    rc = InMemoryRatesCollection.from_list(sample_growth_data())
-    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=int(_ONE_YEAR * 0.1))
-    time_sums = dict()
-    for sample_index in range(0, sample_size):
-        for worker_count in range(min_workers, max_workers + 1):
-            start = time.time()
-            bt.run(worker_count)
-            end = time.time()
-            existing_time_sum = time_sums.get(worker_count, 0)
-            time_sums[worker_count] = existing_time_sum + end - start
-
-    recommended_workers = max_workers
-    best_time = None
-    for worker_count, time_sum in time_sums.items():
-        avg_time = time_sum / sample_size
-        print(f"Worker count <{worker_count}> Average duration <{avg_time}>")
-        if best_time is None or avg_time < best_time:
-            best_time = avg_time
-            recommended_workers = worker_count
-    print("Recommended number of workers:", recommended_workers)
-
-
-def process_fn(v):
-    cpu_intensive()
-    print("v is {}".format(v))
-    return v + 1
-
-
-def cpu_intensive():
-    for l in range(0, 1000):
-        for i in range(0, 100):
-            j = (i ** 2) ** (i / 2)
-
-
-def test():
-    resource = dict()
-    for i in range(0, 100):
-        resource[i] = i
-    starttime = time.time()
-    results = []
-    print("Starting")
-    with concurrent.futures.ProcessPoolExecutor(max_workers=2) as pool:
-        for k in resource.keys():
-            v = resource[k]
-            print("Submitting ", v)
-            future: Future = pool.submit(process_fn, v)
-            results.append((k, future,))
-
-        for key, future in results:
-            exception = future.exception()
-            if exception:
-                raise exception
-            resource[key] = future.result()
-    print('That took {} seconds'.format(time.time() - starttime))
-    print("results {} ".format(resource))
-    print("f {} ".format(results))
-
-
-if __name__ == "__main__":
-    run()
-    # optimisation_test(sample_size=1, min_workers=1, max_workers=8)
-    # test()

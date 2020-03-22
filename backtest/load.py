@@ -3,7 +3,7 @@ from datetime import datetime
 import requests
 
 from currencies import AUD
-from rates import RatesCollection, InMemoryRatesCollection, Rate
+from backtest.rates import RatesCollection, InMemoryRatesCollection, Rate
 
 _FMP_DATE_FIELD_FORMAT = "%Y-%m-%d"
 _FMP_PRICE_FIELD_NAME = "open"
