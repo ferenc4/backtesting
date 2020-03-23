@@ -1,18 +1,16 @@
 import concurrent.futures
 import concurrent.futures
 from concurrent.futures import Future
-from concurrent.futures import Future
 from datetime import datetime
 from typing import NamedTuple, Callable, Iterable
 
-import matplotlib.pyplot as plt
 import pandas as pd
 
 from backtest.codes.currencies import Ccy, AUD
+from backtest.plotting import plot
 from backtest.rates import RatesCollection, Strategy, InMemoryRatesCollection, Indicator
 from backtest.sample_data import sample_growth_data
 
-_PLOT_MARGIN = 0.05
 _SUMMARY_START_DT_COLUMN = "start_dt"
 _SUMMARY_PERCENTILE_COLUMN = "percentile"
 _SUMMARY_ANNUALISED_PERFORMANCE_COLUMN = "annualised_performance"
@@ -71,32 +69,11 @@ class Summary:
             print(self.df.describe(percentiles=[0.03, 0.25, 0.50, 0.75, 0.97]))
             print(self.percentiles)
 
-    @staticmethod
-    def min_with_margin(min_: float, value_range: float):
-        return min_ - value_range * _PLOT_MARGIN
-
-    @staticmethod
-    def max_with_margin(max_: float, value_range: float):
-        return max_ + value_range * _PLOT_MARGIN
-
     def plot_dt_performance(self):
-        min_val = self.df[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].min()
-        max_val = self.df[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].max()
-        val_range = abs(max_val) - abs(min_val)
-        min_y = self.min_with_margin(min_val, val_range)
-        max_y = self.max_with_margin(max_val, val_range)
-        self.df.plot(x=_SUMMARY_START_DT_COLUMN, y=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN, ylim=(min_y, max_y))
-        plt.show()
+        plot(df=self.df, x=_SUMMARY_START_DT_COLUMN, y=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN, do_show=True)
 
     def plot_percentile_performance(self):
-        min_val = self.percentiles[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].min()
-        max_val = self.percentiles[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].max()
-        val_range = abs(max_val) - abs(min_val)
-        min_y = self.min_with_margin(min_val, val_range)
-        max_y = self.max_with_margin(max_val, val_range)
-        self.percentiles.plot(x=_SUMMARY_PERCENTILE_COLUMN, y=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN,
-                              ylim=(min_y, max_y))
-        plt.show()
+        plot(df=self.percentiles, x=_SUMMARY_PERCENTILE_COLUMN, y=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN, do_show=True)
 
 
 class SummaryEntry(NamedTuple):
@@ -202,6 +179,7 @@ class Backtest:
 def run(worker_count=1):
     duration_days = 10
     rc = InMemoryRatesCollection.from_list(sample_growth_data(duration_days * 3))
+    rc.plot()
     bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=duration_days)
     summary = bt.run(worker_count)
     summary.print()

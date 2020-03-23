@@ -9,6 +9,7 @@ from pandas import DataFrame
 
 from backtest.codes.asset import AssetDescriptor
 from backtest.codes.currencies import Ccy
+from backtest.plotting import plot, show
 
 RATE_FROM_NAME_COLUMN = 'from_name'
 RATE_TO_NAME_COLUMN = 'to_name'
@@ -100,6 +101,9 @@ class RatesCollection:
         raise NotImplementedError()
 
     def dates(self):
+        raise NotImplementedError()
+
+    def plot(self):
         raise NotImplementedError()
 
 
@@ -219,6 +223,12 @@ class InMemoryRatesCollection(RatesCollection):
 
     def get(self, index=0):
         return self.df.iloc[index]
+
+    def plot(self):
+        assets = self.df.groupby(by=RATE_FROM_NAME_COLUMN)
+        for asset, asset_df in assets:
+            plot(df=asset_df, x=RATE_DATE_COLUMN, y=RATE_PRICE_COLUMN, label=asset)
+        show()
 
 
 def for_capital(rc: RatesCollection, to_buy: AssetDescriptor, ccy_amount: Position) -> Position:
