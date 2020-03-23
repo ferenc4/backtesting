@@ -1,6 +1,6 @@
+import concurrent.futures
+import concurrent.futures
 from concurrent.futures import Future
-import concurrent.futures
-import concurrent.futures
 from concurrent.futures import Future
 from datetime import datetime
 from typing import NamedTuple, Callable, Iterable
@@ -10,8 +10,9 @@ import pandas as pd
 
 from backtest.codes.currencies import Ccy, AUD
 from backtest.rates import RatesCollection, Strategy, InMemoryRatesCollection, Indicator
-from backtest.sample_data import ONE_YEAR, sample_growth_data
+from backtest.sample_data import sample_growth_data
 
+_PLOT_MARGIN = 0.05
 _SUMMARY_START_DT_COLUMN = "start_dt"
 _SUMMARY_PERCENTILE_COLUMN = "percentile"
 _SUMMARY_ANNUALISED_PERFORMANCE_COLUMN = "annualised_performance"
@@ -68,18 +69,31 @@ class Summary:
     def print(self):
         with pd.option_context('display.max_rows', None, 'display.max_columns', None, 'expand_frame_repr', False):
             print(self.df.describe(percentiles=[0.03, 0.25, 0.50, 0.75, 0.97]))
-            print()
-            print(self.df)
+            print(self.percentiles)
+
+    @staticmethod
+    def min_with_margin(min_: float, value_range: float):
+        return min_ - value_range * _PLOT_MARGIN
+
+    @staticmethod
+    def max_with_margin(max_: float, value_range: float):
+        return max_ + value_range * _PLOT_MARGIN
 
     def plot_dt_performance(self):
-        min_y = self.df[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].min() * 0.95
-        max_y = self.df[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].max() * 1.05
+        min_val = self.df[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].min()
+        max_val = self.df[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].max()
+        val_range = abs(max_val) - abs(min_val)
+        min_y = self.min_with_margin(min_val, val_range)
+        max_y = self.max_with_margin(max_val, val_range)
         self.df.plot(x=_SUMMARY_START_DT_COLUMN, y=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN, ylim=(min_y, max_y))
         plt.show()
 
     def plot_percentile_performance(self):
-        min_y = self.percentiles[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].min() * 0.9
-        max_y = self.percentiles[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].max() * 1.1
+        min_val = self.percentiles[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].min()
+        max_val = self.percentiles[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].max()
+        val_range = abs(max_val) - abs(min_val)
+        min_y = self.min_with_margin(min_val, val_range)
+        max_y = self.max_with_margin(max_val, val_range)
         self.percentiles.plot(x=_SUMMARY_PERCENTILE_COLUMN, y=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN,
                               ylim=(min_y, max_y))
         plt.show()
@@ -141,10 +155,9 @@ class Backtest:
             performance_df = performance_df.append(row, True)
         return Summary(df, performance_df)
 
-    def run(self, worker_count=1) -> Summary:
+    def execute_simulations(self, worker_count):
         runs_by_run_id = dict()
         print("Starting simulations.")
-
         with concurrent.futures.ProcessPoolExecutor(max_workers=worker_count) as pool:
             for dated_run_context in self._map_run_ids_to_rates():
                 futures = []
@@ -170,6 +183,10 @@ class Backtest:
                     if exception:
                         raise exception
                     runs_by_run_id[run_id] = run_future.result()
+        return runs_by_run_id
+
+    def run(self, worker_count=1) -> Summary:
+        runs_by_run_id = self.execute_simulations(worker_count)
         return self.summarise(runs_by_run_id)
 
     @staticmethod
@@ -183,8 +200,9 @@ class Backtest:
 
 
 def run(worker_count=1):
-    rc = InMemoryRatesCollection.from_list(sample_growth_data())
-    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=int(ONE_YEAR * 0.1))
+    duration_days = 10
+    rc = InMemoryRatesCollection.from_list(sample_growth_data(duration_days * 3))
+    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=duration_days)
     summary = bt.run(worker_count)
     summary.print()
     summary.plot_dt_performance()

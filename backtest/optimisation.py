@@ -7,7 +7,7 @@ from backtest.rates import InMemoryRatesCollection
 def optimisation_test(sample_size=1, worker_count_options: [] = None):
     if worker_count_options is None:
         worker_count_options = []
-    run_duration = int(100)
+    run_duration = 100
     rc = InMemoryRatesCollection.from_list(sample_growth_data(run_duration * 3))
     bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=run_duration)
     time_sums = dict()

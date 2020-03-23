@@ -15,6 +15,7 @@ RATE_TO_NAME_COLUMN = 'to_name'
 RATE_DATE_COLUMN = 'dt'
 RATE_PRICE_COLUMN = 'price'
 _POSITION_VOLUME_COLUMN = 'volume'
+pd.set_option("display.precision", 8)
 
 
 class Filter:
