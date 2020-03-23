@@ -9,7 +9,7 @@ import pandas as pd
 from backtest.codes.currencies import Ccy, AUD
 from backtest.plotting import plot
 from backtest.rates import RatesCollection, Strategy, InMemoryRatesCollection, Indicator
-from backtest.sample_data import sample_growth_data
+from backtest.sample_data import sample_data_from_array
 
 _SUMMARY_START_DT_COLUMN = "start_dt"
 _SUMMARY_PERCENTILE_COLUMN = "percentile"
@@ -177,10 +177,9 @@ class Backtest:
 
 
 def run(worker_count=1):
-    duration_days = 10
-    rc = InMemoryRatesCollection.from_list(sample_growth_data(duration_days * 3))
+    rc = InMemoryRatesCollection.from_list(sample_data_from_array([[1, 2, 4], [3, 1, -3]]))
     rc.plot()
-    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=duration_days)
+    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=1)
     summary = bt.run(worker_count)
     summary.print()
     summary.plot_dt_performance()

@@ -9,7 +9,7 @@ from pandas import DataFrame
 
 from backtest.codes.asset import AssetDescriptor
 from backtest.codes.currencies import Ccy
-from backtest.plotting import plot, show
+from backtest.plotting import plot, show, subplots
 
 RATE_FROM_NAME_COLUMN = 'from_name'
 RATE_TO_NAME_COLUMN = 'to_name'
@@ -226,8 +226,11 @@ class InMemoryRatesCollection(RatesCollection):
 
     def plot(self):
         assets = self.df.groupby(by=RATE_FROM_NAME_COLUMN)
+        fig, ax = subplots()
         for asset, asset_df in assets:
-            plot(df=asset_df, x=RATE_DATE_COLUMN, y=RATE_PRICE_COLUMN, label=asset)
+            prices = self.df[RATE_PRICE_COLUMN]
+            plot(df=asset_df, x=RATE_DATE_COLUMN, y=RATE_PRICE_COLUMN, floor=prices.min(), ceiling=prices.max(),
+                 label=asset, ax=ax)
         show()
 
 

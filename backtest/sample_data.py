@@ -22,3 +22,16 @@ def sample_growth_data(days=ONE_YEAR):
         ccy2_val += ccy2_val * random.randint(-32, 40) / float(100)
         dt += timedelta(days=1)
     return rates
+
+
+def sample_data_from_array(price_paths: [[int]]):
+    rates = []
+    ccy_id = 1
+    for price_path in price_paths:
+        dt = datetime(2000, 1, 1)
+        ccy1 = Ccy("sample{}".format(ccy_id), "")
+        for price in price_path:
+            rates.append(Rate(ccy1, AUD, dt, price))
+            dt += timedelta(days=1)
+        ccy_id += 1
+    return rates
