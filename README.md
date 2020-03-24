@@ -1,5 +1,5 @@
 # backtesting
-## Prereuisites
+## Prerequisites
 ```
 source venv/bin/activate
 ```
