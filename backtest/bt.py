@@ -7,9 +7,9 @@ from typing import NamedTuple, Callable, Iterable
 import pandas as pd
 
 from backtest.codes.currencies import Ccy, AUD
+from backtest.load import from_fmp_api
 from backtest.plotting import plot
-from backtest.rates import RatesCollection, Strategy, InMemoryRatesCollection, Indicator
-from backtest.sample_data import sample_data_from_array
+from backtest.rates import RatesCollection, Strategy, Indicator
 
 ANNUALISED_PERFORMANCE_COLUMN = "annualised_performance"
 _SUMMARY_START_DT_COLUMN = "start_dt"
@@ -180,7 +180,8 @@ class Backtest:
 
 
 def run(worker_count=1):
-    rc = InMemoryRatesCollection.from_list(sample_data_from_array([[1, 2, 8], [3, 1, -3]]))
+    # rc = InMemoryRatesCollection.from_list(sample_data_from_array([[1, 2, 8], [3, 1, -3]]))
+    rc: RatesCollection = from_fmp_api("TSLA")
     rc.plot()
     bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=2)
     summary = bt.run(worker_count)
