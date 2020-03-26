@@ -11,6 +11,7 @@ from backtest.plotting import plot
 from backtest.rates import RatesCollection, Strategy, InMemoryRatesCollection, Indicator
 from backtest.sample_data import sample_data_from_array
 
+ANNUALISED_PERFORMANCE_COLUMN = "annualised_performance"
 _SUMMARY_START_DT_COLUMN = "start_dt"
 _SUMMARY_PERCENTILE_COLUMN = "percentile"
 _SUMMARY_ANNUALISED_PERFORMANCE_COLUMN = "annualised_performance"
@@ -126,6 +127,8 @@ class Backtest:
                                         duration_days=self.duration_days,
                                         annualised_performance=strat.annualised_pnl())._asdict(), True)
         performance_df = pd.DataFrame()
+        df = df.sort_values(by=ANNUALISED_PERFORMANCE_COLUMN, axis=0, ascending=True, inplace=False, kind='quicksort',
+                            na_position='last')
         for percentile in range(0, 101):
             performance = df.quantile(percentile / float(100))
             row = PerformancePercentile(percentile=percentile, annualised_performance=performance).get_df_row()
@@ -177,9 +180,9 @@ class Backtest:
 
 
 def run(worker_count=1):
-    rc = InMemoryRatesCollection.from_list(sample_data_from_array([[1, 2, 4], [3, 1, -3]]))
+    rc = InMemoryRatesCollection.from_list(sample_data_from_array([[1, 2, 8], [3, 1, -3]]))
     rc.plot()
-    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=1)
+    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=2)
     summary = bt.run(worker_count)
     summary.print()
     summary.plot_dt_performance()

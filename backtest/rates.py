@@ -11,6 +11,7 @@ from backtest.codes.asset import AssetDescriptor
 from backtest.codes.currencies import Ccy
 from backtest.plotting import plot, show, subplots
 
+YEAR_DAYS = 365
 RATE_FROM_NAME_COLUMN = 'from_name'
 RATE_TO_NAME_COLUMN = 'to_name'
 RATE_DATE_COLUMN = 'dt'
@@ -305,7 +306,8 @@ class Strategy:
     def annualised_pnl(self):
         pnl = self._pnl()
         sign = -1 if pnl < 0 else 1
-        result = sign * ((1 + float(abs(pnl))) ** (365.0 / float(self._duration_days())))
+        abs_pnl = float(abs(pnl))
+        result = sign * ((1 + abs_pnl) ** (YEAR_DAYS / float(self._duration_days())))
         return result
 
     def _buy(self, position: Position):

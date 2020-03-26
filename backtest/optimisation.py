@@ -1,7 +1,8 @@
 import time
 
-from backtest.bt import sample_growth_data, BuyAsapHoldStrategy, Backtest
+from backtest.bt import BuyAsapHoldStrategy, Backtest
 from backtest.rates import InMemoryRatesCollection
+from backtest.sample_data import sample_growth_data
 
 
 def optimisation_test(sample_size=1, worker_count_options: [] = None):
