@@ -1,0 +1,19 @@
+<html>
+<script>
+<!--var url = "https://gist.githubusercontent.com/guest271314/c4eebf14b4a3cfd36f58/raw/37b82a07ec91e9f35396a23ee7aac26b8dd52c23/file.csv";-->
+var url = "http://127.0.0.1:8000/dt.csv";
+
+var request = new XMLHttpRequest();
+request.open("GET", url, false);
+request.send(null);
+
+var csvData = new Array();
+var jsonObject = request.responseText.split(/\r?\n|\r/);
+for (var i = 0; i < jsonObject.length; i++) {
+  csvData.push(jsonObject[i].split(','));
+}
+// Retrived data from csv file content
+console.log(csvData);
+
+</script>
+</html>
