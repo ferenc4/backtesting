@@ -48,9 +48,9 @@ function to_entries(csv, col_x, col_y){
     return lines
 }
 
-function to_line(entries){
+function to_line(label, entries){
     return {
-        label: 'CHRT - Chart.js Corporation',
+        label: label,
         backgroundColor: colorToHex(window.chartColors.red),
         borderColor: window.chartColors.red,
         data: entries,
@@ -172,19 +172,20 @@ function displayAll(lines){
 function displayCsvFiles(csvFiles){
     let lines = new Array();
     for (let i = 0; i < csvFiles.length; i++) {
-        csv = read(csvFiles[i])
+        csv = read(csvFiles[i] + ".csv")
         console.log(csv)
         let x = 0
         let y = 1
         let entries = to_entries(csv, x, y)
-        let line = to_line(entries)
+        let line = to_line(csvFiles[i], entries)
         lines.push(line)
     }
     console.log(lines)
     displayAll(lines)
 }
 
-displayCsvFiles(["dt.csv"])
+displayCsvFiles(["dt"])
+
 
 </script>
 </body>
