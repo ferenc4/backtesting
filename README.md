@@ -13,7 +13,7 @@ python -m backtest -o <INSERT WORKER COUNTS TO TRY e.g. 1 2 4 8 16>
 ```
 ### To start web server
 ```
-python -m http.server --directory .
+py -m fileserver
 ```
 ### Commonly used functions
 To plot the price of an asset

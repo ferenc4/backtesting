@@ -13,7 +13,7 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
 
 def run(port):
     httpd = socketserver.TCPServer(("", port), functools.partial(CORSRequestHandler, directory="public"))
-    print("Serving HTTP on 0.0.0.0 port ", port)
+    print("Serving HTTP on 0.0.0.0 port", port)
     httpd.serve_forever()
 
 
