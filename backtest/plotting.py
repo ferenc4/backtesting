@@ -1,3 +1,4 @@
+import matplotlib
 import matplotlib.pyplot as plt
 
 _PLOT_MARGIN = 0.05
@@ -16,19 +17,64 @@ def subplots():
     return fig, ax,
 
 
-def plot(df, x, y, floor=None, ceiling=None, label=None, do_show=False, ax=None):
-    if label is None:
-        label = ""
-    min_val = df[y].min() if floor is None else floor
-    max_val = df[y].max() if ceiling is None else ceiling
+class Plot:
+    def plot(self, x, y, label, do_show=False):
+        raise NotImplementedError()
 
-    val_range = abs(max_val - min_val)
-    min_y = min_with_margin(min_val, val_range)
-    max_y = max_with_margin(max_val, val_range)
-    df.plot(x=x, y=y, ylim=(min_y, max_y), label=label, ax=ax, kind='line')
-    if do_show:
-        show()
+    def show(self):
+        raise NotImplementedError()
+
+    def reset(self):
+        raise NotImplementedError()
 
 
-def show():
-    plt.show()
+class WindowPlot(Plot):
+    def __init__(self):
+        self.min_val, self.max_val = None, None
+        self.fig, self.ax = None, None
+        matplotlib.use('TkAgg')
+        self.reset()
+
+    def plot(self, x, y, label, do_show=False):
+        y_min = min(y)
+        y_max = max(y)
+        self.min_val = y_min if self.min_val is None else min(self.min_val, y_min)
+        self.max_val = y_max if self.max_val is None else max(self.max_val, y_max)
+
+        self.ax.plot(x, y, label=label)
+
+        if do_show:
+            self.show()
+
+    def show(self):
+        val_range = abs(self.max_val - self.min_val)
+        min_y = min_with_margin(self.min_val, val_range)
+        max_y = max_with_margin(self.max_val, val_range)
+        plt.ylim(min_y, max_y)
+        plt.show()
+
+    def reset(self):
+        self.min_val, self.max_val = None, None
+        self.fig, self.ax = subplots()
+
+
+class FilePlot(Plot):
+    def __init__(self, file_path):
+        self.x_dict, self.y_dict = None, None
+        self.file_path = file_path
+        self.reset()
+
+    def plot(self, x, y, label, do_show=False):
+        self.x_dict[label] = x
+        self.y_dict[label] = y
+
+        if do_show:
+            self.show()
+
+    def show(self):
+        # todo save to file
+        pass
+
+    def reset(self):
+        self.x_dict = dict()
+        self.y_dict = dict()

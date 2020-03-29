@@ -9,13 +9,14 @@ from pandas import DataFrame
 
 from backtest.codes.asset import AssetDescriptor
 from backtest.codes.currencies import Ccy
-from backtest.plotting import plot, show, subplots
+from backtest.plotting import WindowPlot
 
 YEAR_DAYS = 365
 RATE_FROM_NAME_COLUMN = 'from_name'
 RATE_TO_NAME_COLUMN = 'to_name'
 RATE_DATE_COLUMN = 'dt'
 RATE_PRICE_COLUMN = 'price'
+RATE_VOLUME_COLUMN = 'volume'
 _POSITION_VOLUME_COLUMN = 'volume'
 pd.set_option("display.precision", 8)
 
@@ -51,8 +52,9 @@ class Rate:
                  from_name: AssetDescriptor,
                  to_name: AssetDescriptor,
                  dt: datetime,
-                 value: float = None) -> None:
-        self.from_name, self.to_name, self.dt, self.price = from_name, to_name, dt, value
+                 value: float = None,
+                 volume: float = None) -> None:
+        self.from_name, self.to_name, self.dt, self.price, self.volume = from_name, to_name, dt, value, volume
 
     def __str__(self) -> str:
         return "{}/{} {} {}".format(self.from_name, self.to_name, self.dt, self.price)
@@ -81,6 +83,9 @@ class RatesCollection:
         raise NotImplementedError()
 
     def filter_dates(self, from_date=None, to_date=None):
+        raise NotImplementedError()
+
+    def df(self) -> DataFrame:
         raise NotImplementedError()
 
     def __iter__(self) -> Iterable:
@@ -150,32 +155,32 @@ def no_position(asset: AssetDescriptor) -> Position:
 class InMemoryRatesCollection(RatesCollection):
 
     def __init__(self, init_df=None, is_sorted=False):
-        self.df: pd.Dataframe = init_df
+        self._df: pd.Dataframe = init_df
         if init_df is None:
-            self.df = pd.DataFrame()
+            self._df = pd.DataFrame()
         self.is_sorted = is_sorted
 
     def __str__(self) -> str:
-        return self.df.__str__()
+        return self._df.__str__()
 
     def __repr__(self) -> str:
-        return self.df.__repr__()
+        return self._df.__repr__()
 
     def _sort(self):
         if not self.is_sorted:
-            self.df.sort_values(by=RATE_DATE_COLUMN, axis=0, ascending=True, inplace=False, kind='quicksort',
-                                na_position='last')
+            self._df.sort_values(by=RATE_DATE_COLUMN, axis=0, ascending=True, inplace=False, kind='quicksort',
+                                 na_position='last')
             self.is_sorted = True
 
     def __iter__(self) -> Iterable:
         self._sort()
-        grouped = self.df.groupby(by=RATE_DATE_COLUMN)
+        grouped = self._df.groupby(by=RATE_DATE_COLUMN)
         for dt, rates_df in grouped:
             yield (dt, InMemoryRatesCollection(rates_df, self.is_sorted))
 
     def dates(self):
         self._sort()
-        return self.df[RATE_DATE_COLUMN].unique()
+        return self._df[RATE_DATE_COLUMN].unique()
 
     @staticmethod
     def from_list(rates_ary: [Rate] = None) -> RatesCollection:
@@ -193,46 +198,49 @@ class InMemoryRatesCollection(RatesCollection):
         return InMemoryRatesCollection(df)
 
     def __len__(self):
-        return self.df.__len__()
+        return self._df.__len__()
 
     def insert(self, rate: Rate):
-        self.df = self.df.append(rate.__dict__, ignore_index=True)
+        self._df = self._df.append(rate.__dict__, ignore_index=True)
         self.is_sorted = False
 
     def filter(self, *filters: Filter) -> RatesCollection:
-        grouped_filters = exec_filters(self.df, filters)
-        return InMemoryRatesCollection(self.df[grouped_filters], self.is_sorted)
+        grouped_filters = exec_filters(self._df, filters)
+        return InMemoryRatesCollection(self._df[grouped_filters], self.is_sorted)
 
     def filter_dates(self, from_date_inclusive: datetime = None, to_date_inclusive: datetime = None) -> RatesCollection:
-        search_result = self.df
+        search_result = self._df
         if from_date_inclusive and to_date_inclusive:
-            search_result = self.df[from_date_inclusive <= self.df[RATE_DATE_COLUMN] <= to_date_inclusive]
+            search_result = self._df[from_date_inclusive <= self._df[RATE_DATE_COLUMN] <= to_date_inclusive]
         if from_date_inclusive:
-            search_result = self.df[from_date_inclusive <= self.df[RATE_DATE_COLUMN]]
+            search_result = self._df[from_date_inclusive <= self._df[RATE_DATE_COLUMN]]
         if to_date_inclusive:
-            search_result = self.df[self.df[RATE_DATE_COLUMN] <= to_date_inclusive]
+            search_result = self._df[self._df[RATE_DATE_COLUMN] <= to_date_inclusive]
         return InMemoryRatesCollection(search_result, self.is_sorted)
 
     def last_dt(self) -> datetime:
-        return self.df.loc[self.df[RATE_DATE_COLUMN].idxmax()][RATE_DATE_COLUMN]
+        return self._df.loc[self._df[RATE_DATE_COLUMN].idxmax()][RATE_DATE_COLUMN]
 
-    def merge(self, other_rates_collection) -> RatesCollection:
-        return InMemoryRatesCollection(self.df.append(other_rates_collection.df))
+    def merge(self, other_rates_collection: RatesCollection) -> RatesCollection:
+        # for large csv files this will be more efficient with iterators rather than dataframes
+        return InMemoryRatesCollection(self._df.append(other_rates_collection.df()))
 
     def to_csv(self, file_path: str):
-        return self.df.to_csv(file_path)
+        return self._df.to_csv(file_path)
 
     def get(self, index=0):
-        return self.df.iloc[index]
+        return self._df.iloc[index]
 
     def plot(self):
-        assets = self.df.groupby(by=RATE_FROM_NAME_COLUMN)
-        fig, ax = subplots()
+        assets = self._df.groupby(by=RATE_FROM_NAME_COLUMN)
+        out = WindowPlot()
         for asset, asset_df in assets:
-            prices = self.df[RATE_PRICE_COLUMN]
-            plot(df=asset_df, x=RATE_DATE_COLUMN, y=RATE_PRICE_COLUMN, floor=prices.min(), ceiling=prices.max(),
-                 label=asset, ax=ax)
-        show()
+            out.plot(x=asset_df[RATE_DATE_COLUMN], y=asset_df[RATE_PRICE_COLUMN], label=asset)
+            # out.plot(x=asset_df[RATE_DATE_COLUMN], y=asset_df[RATE_VOLUME_COLUMN], label=f"{asset}_VOL")
+        out.show()
+
+    def df(self) -> DataFrame:
+        return self._df
 
 
 def for_capital(rc: RatesCollection, to_buy: AssetDescriptor, ccy_amount: Position) -> Position:
@@ -253,6 +261,7 @@ class Strategy:
         self._last_calculated_pnl = None
         self.run_id = run_id
         self._picked: AssetDescriptor = None
+        self._portfolio_value = None
 
     def __str__(self) -> str:
         return self.__dict__.__str__()
@@ -277,22 +286,25 @@ class Strategy:
     def last_seen_rc(self, rates_collection: RatesCollection):
         self._last_seen_rc = rates_collection
         self._last_calculated_pnl = None
+        self._portfolio_value = None
 
     def next(self, indicators: [Indicator], rates_collection: RatesCollection):
         raise NotImplementedError()
 
     def reval_portfolio(self, rates_collection: RatesCollection = None, reval_ccy: Ccy = None):
-        if rates_collection is None:
-            rates_collection = self._last_seen_rc
-        if reval_ccy is None:
-            reval_ccy = self._home_ccy
-        portfolio_value = 0
-        for asset, position in self._pos.items():
-            if asset == reval_ccy:
-                portfolio_value = portfolio_value + position.volume
-            else:
-                portfolio_value = portfolio_value + position.rc_reval(rates_collection, self._home_ccy)
-        return Position(descriptor=reval_ccy, volume=portfolio_value)
+        if self._portfolio_value is None:
+            if rates_collection is None:
+                rates_collection = self._last_seen_rc
+            if reval_ccy is None:
+                reval_ccy = self._home_ccy
+            portfolio_volume = 0
+            for asset, position in self._pos.items():
+                if asset == reval_ccy:
+                    portfolio_volume = portfolio_volume + position.volume
+                else:
+                    portfolio_volume = portfolio_volume + position.rc_reval(rates_collection, self._home_ccy)
+            self._portfolio_value = Position(descriptor=reval_ccy, volume=portfolio_volume)
+        return self._portfolio_value
 
     def _pnl(self):
         if self._last_calculated_pnl is None:
@@ -307,12 +319,21 @@ class Strategy:
         pnl = self._pnl()
         sign = -1 if pnl < 0 else 1
         abs_pnl = float(abs(pnl))
-        result = sign * ((1 + abs_pnl) ** (YEAR_DAYS / float(self._duration_days())))
+        days = self._duration_days()
+        power = (float(YEAR_DAYS) / float(days)) if days < YEAR_DAYS else float(days) / float(YEAR_DAYS)
+        result = sign * ((1 + abs_pnl) ** power)
         return result
 
     def _buy(self, position: Position):
         position_cost = position.rc_reval(self._last_seen_rc, self._home_ccy)
         self._buy_for_amount(position.descriptor, position_cost)
+
+    def _sell(self, position: Position):
+        self._portfolio_value = None
+        # todo
+
+    def _sell_all(self, asset: AssetDescriptor):
+        pass
 
     def _buy_for_amount(self, asset: AssetDescriptor, cost: Position):
         rt: float = self._last_seen_rc.filter(Filter(RATE_FROM_NAME_COLUMN, asset),
@@ -323,3 +344,4 @@ class Strategy:
         affordable_cost_volume: float = affordable_asset_position.volume * rt
         self._pos[self._home_ccy] -= Position(descriptor=cost.descriptor, volume=affordable_cost_volume)
         self._pos[asset] = self._pos.get(asset, affordable_asset_position)
+        self._portfolio_value = None

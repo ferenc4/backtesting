@@ -8,8 +8,8 @@ import pandas as pd
 
 from backtest.codes.currencies import Ccy, AUD
 from backtest.load import from_fmp_api
-from backtest.plotting import plot
-from backtest.rates import RatesCollection, Strategy, Indicator
+from backtest.plotting import WindowPlot
+from backtest.rates import RatesCollection, Strategy, Indicator, YEAR_DAYS
 
 ANNUALISED_PERFORMANCE_COLUMN = "annualised_performance"
 _SUMMARY_START_DT_COLUMN = "start_dt"
@@ -19,16 +19,11 @@ pd.set_option("display.precision", 8)
 
 
 class PerformancePercentile:
-    percentile: float
-    annualised_performance: dict
+    percentile: int
+    annualised_performance: float
 
-    def __init__(self, percentile: float, annualised_performance: dict) -> None:
+    def __init__(self, percentile: int, annualised_performance: float) -> None:
         self.percentile, self.annualised_performance = percentile, annualised_performance
-
-    def get_df_row(self) -> dict:
-        df_row = self.__dict__
-        df_row.update(self.annualised_performance)
-        return df_row
 
 
 class RunData(NamedTuple):
@@ -71,10 +66,16 @@ class Summary:
             print(self.percentiles)
 
     def plot_dt_performance(self):
-        plot(df=self.df, x=_SUMMARY_START_DT_COLUMN, y=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN, do_show=True)
+        WindowPlot().plot(x=self.df[_SUMMARY_START_DT_COLUMN].values,
+                          y=self.df[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].values,
+                          label=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN,
+                          do_show=True)
 
     def plot_percentile_performance(self):
-        plot(df=self.percentiles, x=_SUMMARY_PERCENTILE_COLUMN, y=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN, do_show=True)
+        WindowPlot().plot(x=self.percentiles[_SUMMARY_PERCENTILE_COLUMN].values,
+                          y=self.percentiles[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].values,
+                          label=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN,
+                          do_show=True)
 
 
 class SummaryEntry(NamedTuple):
@@ -127,11 +128,12 @@ class Backtest:
                                         duration_days=self.duration_days,
                                         annualised_performance=strat.annualised_pnl())._asdict(), True)
         performance_df = pd.DataFrame()
-        df = df.sort_values(by=ANNUALISED_PERFORMANCE_COLUMN, axis=0, ascending=True, inplace=False, kind='quicksort',
+        df = df.sort_values(by=ANNUALISED_PERFORMANCE_COLUMN, axis=0, ascending=True, inplace=False,
+                            kind='quicksort',
                             na_position='last')
-        for percentile in range(0, 101):
-            performance = df.quantile(percentile / float(100))
-            row = PerformancePercentile(percentile=percentile, annualised_performance=performance).get_df_row()
+        for percentile in range(0, min(101, len(df))):
+            performance = df.iloc[percentile][_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN]
+            row = PerformancePercentile(percentile=percentile, annualised_performance=performance).__dict__
             performance_df = performance_df.append(row, True)
         return Summary(df, performance_df)
 
@@ -179,11 +181,11 @@ class Backtest:
         return current_run
 
 
-def run(worker_count=1):
-    # rc = InMemoryRatesCollection.from_list(sample_data_from_array([[1, 2, 8], [3, 1, -3]]))
-    rc: RatesCollection = from_fmp_api("TSLA")
+def run(worker_count=1, duration_days=2 * YEAR_DAYS):
+    rc: RatesCollection = from_fmp_api("TSLA", "AAPL")
+    rc = rc.filter_dates(datetime(2020, 1, 1))
     rc.plot()
-    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=2)
+    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=duration_days)
     summary = bt.run(worker_count)
     summary.print()
     summary.plot_dt_performance()
