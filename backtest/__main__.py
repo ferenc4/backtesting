@@ -1,7 +1,7 @@
 import argparse
 
-from backtest.bt import run
 from backtest.optimisation import optimisation_test
+from backtest.run import run
 
 
 def to_int_array(str_ary: [str]):

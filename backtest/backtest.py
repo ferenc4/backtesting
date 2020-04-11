@@ -7,9 +7,9 @@ from typing import NamedTuple, Callable, Iterable
 import pandas as pd
 
 from backtest.codes.currencies import Ccy, AUD
-from backtest.load import from_fmp_api
 from backtest.plotting import WindowPlot
-from backtest.rates import RatesCollection, Strategy, Indicator, YEAR_DAYS
+from backtest.rates.rates import RatesCollection, Indicator
+from backtest.strategy import Strategy
 
 ANNUALISED_PERFORMANCE_COLUMN = "annualised_performance"
 _SUMMARY_START_DT_COLUMN = "start_dt"
@@ -144,20 +144,16 @@ class Backtest:
             for dated_run_context in self._map_run_ids_to_rates():
                 futures = []
                 dt, run_ids, rc = dated_run_context.dt, dated_run_context.run_ids, dated_run_context.rc
+
                 # pre compute std stats only once per date to make it overall more efficient
-                # ...
-                indicators = []
+                indicators = self.calc_indicators(dt)
+
                 print("Running simulation for date {}.".format(dt))
                 for run_id in run_ids:
-                    # if run_id not in lock_dict:
-                    #     lock_dict[run_id] = m.Lock()
-                    # lock = lock_dict[run_id]
-                    # self._process_dt_for_run_id(current_run=current_run, dt=dt, rc=rc, indicators=indicators)
-
                     default_strategy = self.strategy_supplier(run_id=run_id, init_capital=1000, home_ccy=AUD)
                     default_run_data = RunData(run_id=run_id, strategy=default_strategy)
                     current_run: RunData = runs_by_run_id.get(run_id, default_run_data)
-                    run_future: Future = pool.submit(self._process_dt_for_run_id, current_run, dt, rc, indicators)
+                    run_future: Future = pool.submit(self._strategy_process_next, current_run, dt, rc, indicators)
                     futures.append((run_id, run_future))
 
                 for run_id, run_future in futures:
@@ -167,12 +163,20 @@ class Backtest:
                     runs_by_run_id[run_id] = run_future.result()
         return runs_by_run_id
 
-    def run(self, worker_count=1) -> Summary:
+    def calc_indicators(self, current_date):
+        # todo
+        rc = self.rc
+        return []
+
+    def train(self, worker_count=1) -> None:
+        return
+
+    def test(self, worker_count=1) -> Summary:
         runs_by_run_id = self.execute_simulations(worker_count)
         return self.summarise(runs_by_run_id)
 
     @staticmethod
-    def _process_dt_for_run_id(current_run: RunData, dt: datetime, rc: RatesCollection,
+    def _strategy_process_next(current_run: RunData, dt: datetime, rc: RatesCollection,
                                indicators: [Indicator]):
         strat = current_run.strategy
         strat.next_datetime(dt)
@@ -180,13 +184,3 @@ class Backtest:
         strat.next(indicators, rc)
         return current_run
 
-
-def run(worker_count=1, duration_days=2 * YEAR_DAYS):
-    rc: RatesCollection = from_fmp_api("TSLA", "AAPL")
-    rc = rc.filter_dates(datetime(2020, 1, 1))
-    rc.plot()
-    bt = Backtest(rc=rc, strategy_supplier=BuyAsapHoldStrategy, duration_days=duration_days)
-    summary = bt.run(worker_count)
-    summary.print()
-    summary.plot_dt_performance()
-    summary.plot_percentile_performance()

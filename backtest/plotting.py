@@ -17,6 +17,11 @@ def subplots():
     return fig, ax,
 
 
+class Plottable:
+    def __init__(self, x: [], y: [], label: str):
+        self.x, self.y, self.label = x, y, label
+
+
 class Plot:
     def plot(self, x, y, label, do_show=False):
         raise NotImplementedError()
@@ -40,9 +45,8 @@ class WindowPlot(Plot):
         y_max = max(y)
         self.min_val = y_min if self.min_val is None else min(self.min_val, y_min)
         self.max_val = y_max if self.max_val is None else max(self.max_val, y_max)
-
         self.ax.plot(x, y, label=label)
-
+        self.ax.legend()
         if do_show:
             self.show()
 
@@ -58,22 +62,31 @@ class WindowPlot(Plot):
         self.fig, self.ax = subplots()
 
 
-class FilePlot(Plot):
+class CsvFilePlot(Plot):
     def __init__(self, file_path):
-        self.x_dict, self.y_dict = None, None
+        self.labelled_values = None
         self.file_path = file_path
         self.reset()
 
     def plot(self, x, y, label, do_show=False):
-        self.x_dict[label] = x
+        for x_value, y_value in zip(x, y):
+            self.plot_row(x_value, y_value, label)
+        self.labelled_values[label] = x
         self.y_dict[label] = y
 
         if do_show:
             self.show()
 
+    def plot_row(self, x_value, y_value, label):
+        # self.labelled_values[label] =
+        print(label, x_value, y_value)
+
     def show(self):
-        # todo save to file
-        pass
+        for label_x, x_value in self.x_dict:
+            y = self.y_dict[label_x]
+
+    def save(self):
+        self.show()
 
     def reset(self):
         self.x_dict = dict()

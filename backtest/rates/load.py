@@ -3,14 +3,14 @@ from datetime import datetime
 import requests
 
 from backtest.codes.currencies import AUD
-from backtest.rates import RatesCollection, InMemoryRatesCollection, Rate
+from backtest.rates.rates import RatesCollection, InMemoryRatesCollection, Rate
 
 _FMP_DATE_FIELD_FORMAT = "%Y-%m-%d"
 _FMP_VOLUME_FIELD_NAME = "volume"
 _FMP_ADJ_CLOSE_PRICE_FIELD_NAME = "adjClose"
 _FMP_DATE_FIELD_NAME = "date"
 _FMP_LOAD_HISTORICAL_PRICES_ARRAY_FIELD_NAME = "historical"
-_FMP_ENDPOINT_LOAD_HISTORICAL_PRICES = "https://financialmodelingprep.com/api/v3/historical-price-full/{}"
+_FMP_ENDPOINT_LOAD_HISTORICAL_PRICES = "https://financialmodelingprep.com/api/v3/historical-price-full/{}?apikey=demo"
 
 
 def from_fmp_api(*asset_symbols) -> RatesCollection:

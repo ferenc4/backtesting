@@ -1,7 +1,7 @@
 import time
 
-from backtest.bt import BuyAsapHoldStrategy, Backtest
-from backtest.rates import InMemoryRatesCollection
+from backtest.backtest import BuyAsapHoldStrategy, Backtest
+from backtest.rates.rates import InMemoryRatesCollection
 from backtest.sample_data import sample_growth_data
 
 
@@ -16,7 +16,7 @@ def optimisation_test(sample_size=1, worker_count_options: [] = None):
     for sample_index in range(0, sample_size):
         for worker_count in worker_count_options:
             start = time.time()
-            bt.run(worker_count)
+            bt.test(worker_count)
             end = time.time()
             existing_time_sum = time_sums.get(worker_count, 0)
             time_sums[worker_count] = existing_time_sum + end - start

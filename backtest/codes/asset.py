@@ -19,8 +19,5 @@ class AssetDescriptor:
     def __hash__(self) -> int:
         return "{}|{}".format(self.label, self.code).__hash__()
 
-    def __lt__(self, other):
-        return self.__str__() < other.__str__()
-
     def __eq__(self, other):
         return isinstance(other, AssetDescriptor) and self.label == other.label and self.code == other.code
