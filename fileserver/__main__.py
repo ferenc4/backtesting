@@ -4,8 +4,13 @@ import socketserver
 import sys
 from http.server import SimpleHTTPRequestHandler
 
+Handler = SimpleHTTPRequestHandler
+Handler.extensions_map.update({
+    ".js": "application/javascript",
+})
 
-class CORSRequestHandler(SimpleHTTPRequestHandler):
+
+class CORSRequestHandler(Handler):
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         SimpleHTTPRequestHandler.end_headers(self)
