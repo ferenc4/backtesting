@@ -1,7 +1,7 @@
 import random
 from datetime import datetime, timedelta
 
-from backtest.codes.currencies import AUD, Ccy
+from backtest.descriptors.currencies import AUD, Ccy
 from backtest.rates.rates import Rate
 
 ONE_YEAR = 365

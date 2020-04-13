@@ -1,14 +1,14 @@
 import math
 from datetime import datetime
 
-from backtest.codes.asset import AssetDescriptor
-from backtest.codes.currencies import Ccy
+from backtest.descriptors.asset import Descriptor
+from backtest.descriptors.currencies import Ccy
 from backtest.rates.constants import RATE_DATE_COLUMN, RATE_PRICE_COLUMN, RATE_FROM_NAME_COLUMN, RATE_TO_NAME_COLUMN
 from backtest.rates.rates import RatesCollection, Filter
 
 
 class Position:
-    def __init__(self, descriptor: AssetDescriptor, volume: float) -> None:
+    def __init__(self, descriptor: Descriptor, volume: float) -> None:
         self.descriptor = descriptor
         self.volume = volume
 
@@ -42,11 +42,11 @@ class Position:
         return self.volume * price
 
 
-def no_position(asset: AssetDescriptor) -> Position:
+def no_position(asset: Descriptor) -> Position:
     return Position(asset, 0)
 
 
-def for_capital(rc: RatesCollection, to_buy: AssetDescriptor, ccy_amount: Position) -> Position:
+def for_capital(rc: RatesCollection, to_buy: Descriptor, ccy_amount: Position) -> Position:
     price = rc.filter(Filter(RATE_DATE_COLUMN, rc.last_dt()), Filter(RATE_FROM_NAME_COLUMN, to_buy),
                       Filter(RATE_TO_NAME_COLUMN, ccy_amount.descriptor)).get()[RATE_PRICE_COLUMN]
     return Position(descriptor=to_buy, volume=math.floor(ccy_amount.volume / price))

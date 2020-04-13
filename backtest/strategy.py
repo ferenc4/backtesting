@@ -1,8 +1,8 @@
 from datetime import datetime
 from operator import attrgetter
 
-from backtest.codes.asset import AssetDescriptor
-from backtest.codes.currencies import Ccy
+from backtest.descriptors.asset import Descriptor
+from backtest.descriptors.currencies import Ccy
 from backtest.position import Position, for_capital
 from backtest.rates.constants import RATE_DATE_COLUMN, RATE_TO_NAME_COLUMN, RATE_FROM_NAME_COLUMN, YEAR_DAYS, \
     RATE_PRICE_COLUMN, POSITION_VOLUME_COLUMN
@@ -20,7 +20,7 @@ class Strategy:
         self.end_dt = None
         self._last_calculated_pnl = None
         self.run_id = run_id
-        self._picked: AssetDescriptor = None
+        self._picked: Descriptor = None
         self._portfolio_value = None
 
     def __str__(self) -> str:
@@ -92,10 +92,10 @@ class Strategy:
         self._portfolio_value = None
         # todo
 
-    def _sell_all(self, asset: AssetDescriptor):
+    def _sell_all(self, asset: Descriptor):
         pass
 
-    def _buy_for_amount(self, asset: AssetDescriptor, cost: Position):
+    def _buy_for_amount(self, asset: Descriptor, cost: Position):
         rt: float = self._last_seen_rc.filter(Filter(RATE_FROM_NAME_COLUMN, asset),
                                               Filter(RATE_TO_NAME_COLUMN, cost.descriptor)).get()[RATE_PRICE_COLUMN]
         affordable_asset_position: Position = for_capital(self._last_seen_rc, asset,

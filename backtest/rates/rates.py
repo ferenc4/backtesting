@@ -6,9 +6,9 @@ from typing import Iterable, Any
 import pandas as pd
 from pandas import DataFrame
 
-from backtest.codes.asset import AssetDescriptor
+from backtest.descriptors.asset import Descriptor
 from backtest.plotting import WindowPlot, Plot
-from backtest.rates.constants import RATE_DATE_COLUMN, RATE_FROM_NAME_COLUMN
+from backtest.rates.constants import RATE_DATE_COLUMN, RATE_TO_NAME_COLUMN
 from backtest.rates.plot_transforms import date_rate_transform
 
 pd.set_option("display.precision", 8)
@@ -42,8 +42,8 @@ class TimeLength(Enum):
 
 class Rate:
     def __init__(self,
-                 from_name: AssetDescriptor,
-                 to_name: AssetDescriptor,
+                 from_name: Descriptor,
+                 to_name: Descriptor,
                  dt: datetime,
                  value: float = None,
                  volume: float = None) -> None:
@@ -194,7 +194,7 @@ class InMemoryRatesCollection(RatesCollection):
             plot = WindowPlot()
         if transform_fn is None:
             transform_fn = date_rate_transform
-        assets = self._df.groupby(by=RATE_FROM_NAME_COLUMN)
+        assets = self._df.groupby(by=RATE_TO_NAME_COLUMN)
         for asset, asset_df in assets:
             plottable = transform_fn(asset, asset_df)
             plot.plot(plottable.x, plottable.y, plottable.label)

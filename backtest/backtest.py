@@ -6,7 +6,7 @@ from typing import NamedTuple, Callable, Iterable
 
 import pandas as pd
 
-from backtest.codes.currencies import Ccy, AUD
+from backtest.descriptors.currencies import Ccy, AUD
 from backtest.plotting import WindowPlot
 from backtest.rates.rates import RatesCollection, Indicator
 from backtest.strategy import Strategy
