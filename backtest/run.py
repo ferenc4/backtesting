@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import backtest.rates.plot_transforms as transforms
 from backtest.backtest import Backtest, BuyAsapHoldStrategy
 from backtest.descriptors.asset import Descriptor
@@ -9,11 +11,11 @@ from backtest.rates.rates import RatesCollection
 
 
 def run(worker_count=1, duration_days=2 * YEAR_DAYS):
-    compare_cumulative_percentage_growth(Etf("VBR"), Etf("SPY"))
+    compare_cumulative_percentage_growth([Etf("VBR"), Etf("SPY")])
 
 
-def compare_cumulative_percentage_growth(*assets: Descriptor):
-    rc: RatesCollection = from_yahoo_finance_api(*assets)
+def compare_cumulative_percentage_growth(assets: [Descriptor]):
+    rc: RatesCollection = from_yahoo_finance_api(assets, datetime(2000, 1, 1), datetime.today())
     rc.plot(transforms.date_cumulative_deriv_rate_transform)
 
 

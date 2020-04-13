@@ -37,20 +37,16 @@ def _rate_from_fmp_item(json_elem, ticker):
     return rate
 
 
-def from_yahoo_finance_api(*tickers: Descriptor, from_date: datetime = None,
+def from_yahoo_finance_api(tickers: [Descriptor], from_date: datetime = None,
                            to_date: datetime = None) -> RatesCollection:
     if from_date is not None:
-        from_date = from_date.strftime(_YAHOO_FINANCE_VOLUME_FIELD_NAME)
+        from_date = from_date.strftime(_YAHOO_FINANCE_DATE_FIELD_FORMAT)
     if to_date is not None:
-        to_date = to_date.strftime(_YAHOO_FINANCE_VOLUME_FIELD_NAME)
+        to_date = to_date.strftime(_YAHOO_FINANCE_DATE_FIELD_FORMAT)
     rc = InMemoryRatesCollection()
     for ticker in tickers:
-        response = []
-        try:
-            response = get_data_yahoo(ticker.ticker, from_date, to_date).iterrows()
-        except:
-            print(f"Couldn't load ticker <{ticker}>.")
-        for pandas_ts, row in response:
+        response = get_data_yahoo(ticker.ticker, from_date, to_date)
+        for pandas_ts, row in response.iterrows():
             extracted_datetime = datetime(pandas_ts.year, pandas_ts.month, pandas_ts.day)
             rate = Rate(from_name=AUD, to_name=ticker, dt=extracted_datetime,
                         value=row[_YAHOO_FINANCE_ADJ_CLOSE_PRICE_FIELD_NAME],
