@@ -65,17 +65,21 @@ class Summary:
             print(self.df.describe(percentiles=[0.03, 0.25, 0.50, 0.75, 0.97]))
             print(self.percentiles)
 
-    def plot_dt_performance(self):
-        WindowPlot().plot(x=self.df[_SUMMARY_START_DT_COLUMN].values,
-                          y=self.df[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].values,
-                          label=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN,
-                          do_show=True)
+    def plot_dt_performance(self, plot=None):
+        if plot is None:
+            plot = WindowPlot()
+        plot.plot(x=self.df[_SUMMARY_START_DT_COLUMN].values,
+                  y=self.df[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].values,
+                  label=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN,
+                  do_show=True)
 
-    def plot_percentile_performance(self):
-        WindowPlot().plot(x=self.percentiles[_SUMMARY_PERCENTILE_COLUMN].values,
-                          y=self.percentiles[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].values,
-                          label=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN,
-                          do_show=True)
+    def plot_percentile_performance(self, plot=None):
+        if plot is None:
+            plot = WindowPlot()
+        plot.plot(x=self.percentiles[_SUMMARY_PERCENTILE_COLUMN].values,
+                  y=self.percentiles[_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN].values,
+                  label=_SUMMARY_ANNUALISED_PERFORMANCE_COLUMN,
+                  do_show=True)
 
 
 class SummaryEntry(NamedTuple):
@@ -183,4 +187,3 @@ class Backtest:
         strat.last_seen_rc(rc)
         strat.next(indicators, rc)
         return current_run
-

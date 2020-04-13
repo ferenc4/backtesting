@@ -1,7 +1,11 @@
+import csv
+import os
+
 import matplotlib
 import matplotlib.pyplot as plt
 
 _PLOT_MARGIN = 0.05
+_DEFAULT_FILE_LOCATION = "public/reports"
 
 
 def min_with_margin(min_: float, value_range: float):
@@ -63,31 +67,28 @@ class WindowPlot(Plot):
 
 
 class CsvFilePlot(Plot):
-    def __init__(self, file_path):
+    def __init__(self, folder_path=None):
         self.labelled_values = None
-        self.file_path = file_path
+        self.folder_path = _DEFAULT_FILE_LOCATION if folder_path is None else folder_path
         self.reset()
 
     def plot(self, x, y, label, do_show=False):
-        for x_value, y_value in zip(x, y):
-            self.plot_row(x_value, y_value, label)
-        self.labelled_values[label] = x
-        self.y_dict[label] = y
-
+        self.labelled_values[self._get_file_path(label)] = [[str(x_col), str(y_col)] for x_col, y_col in zip(x, y)]
         if do_show:
             self.show()
 
-    def plot_row(self, x_value, y_value, label):
-        # self.labelled_values[label] =
-        print(label, x_value, y_value)
+    def _get_file_path(self, label):
+        return os.path.join(self.folder_path, f"{label}.csv")
 
     def show(self):
-        for label_x, x_value in self.x_dict:
-            y = self.y_dict[label_x]
+        for label, rows in self.labelled_values.items():
+            with open(label, "w", newline='') as csv_file:
+                writer = csv.writer(csv_file, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                for row in rows:
+                    writer.writerow(row)
 
     def save(self):
         self.show()
 
     def reset(self):
-        self.x_dict = dict()
-        self.y_dict = dict()
+        self.labelled_values = dict()

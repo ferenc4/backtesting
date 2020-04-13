@@ -11,7 +11,7 @@ function removeElement(elementId) {
     var element = document.getElementById(elementId);
     element.parentNode.removeChild(element);
 }
-quote = "'"
+var quote = "'"
 export function newPath(pathId, parentId) {
     pathId++;
     var html = '<input type="text" name="inputPaths[]"/>'; //+
