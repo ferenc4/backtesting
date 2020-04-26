@@ -15,4 +15,7 @@ class Etf(Descriptor):
 
 
 SP500 = Idx("^GSPC", "S&P500 Index")
+ASX200 = Idx("^AXJO", "ASX200 Index")
+
+VWO = Etf("VWO")
 SPY = Etf("SPY", "SPDR S&P 500 ETF Trust")

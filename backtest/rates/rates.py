@@ -7,9 +7,10 @@ import pandas as pd
 from pandas import DataFrame
 
 from backtest.descriptors.asset import Descriptor
+from backtest.descriptors.currencies import AUD
 from backtest.plotting import WindowPlot, Plot
 from backtest.rates.constants import RATE_DATE_COLUMN, RATE_TO_NAME_COLUMN
-from backtest.rates.plot_transforms import date_rate_transform
+from backtest.rates.plot_transforms import rc_date_rate_transform
 
 pd.set_option("display.precision", 8)
 
@@ -81,6 +82,15 @@ class RatesCollection:
     def df(self) -> DataFrame:
         raise NotImplementedError()
 
+    def get_assets(self):
+        raise NotImplementedError()
+
+    def get_asset_names(self):
+        raise NotImplementedError()
+
+    def fillna(self):
+        raise NotImplementedError()
+
     def __iter__(self) -> Iterable:
         raise NotImplementedError()
 
@@ -102,7 +112,7 @@ class RatesCollection:
     def dates(self):
         raise NotImplementedError()
 
-    def plot(self, transform_fn=None):
+    def plot(self, transform_fn=None) -> Plot:
         raise NotImplementedError()
 
 
@@ -189,16 +199,31 @@ class InMemoryRatesCollection(RatesCollection):
     def get(self, index=0):
         return self._df.iloc[index]
 
-    def plot(self, transform_fn=None, plot: Plot = None):
+    def plot(self, transform_fn=None, plot: Plot = None, show_plot=True) -> Plot:
         if plot is None:
             plot = WindowPlot()
         if transform_fn is None:
-            transform_fn = date_rate_transform
-        assets = self._df.groupby(by=RATE_TO_NAME_COLUMN)
+            transform_fn = rc_date_rate_transform
+        assets = self.get_assets()
         for asset, asset_df in assets:
             plottable = transform_fn(asset, asset_df)
             plot.plot(plottable.x, plottable.y, plottable.label)
-        plot.show()
+        if show_plot:
+            plot.show()
+        return plot
+
+    def get_assets(self):
+        return self._df.groupby(by=RATE_TO_NAME_COLUMN)
+
+    def get_asset_names(self):
+        return self._df[RATE_TO_NAME_COLUMN].unique()
 
     def df(self) -> DataFrame:
         return self._df
+
+    def fillna(self, ccy=AUD):
+        asset_names = set(self.get_asset_names())
+        for dt, df_for_dt in self._df.groupby(by=RATE_DATE_COLUMN):
+            coll_to_add = asset_names.difference(df_for_dt[RATE_TO_NAME_COLUMN].unique())
+            for val_to_add in coll_to_add:
+                self.insert(Rate(dt=dt, from_name=ccy, to_name=val_to_add))
