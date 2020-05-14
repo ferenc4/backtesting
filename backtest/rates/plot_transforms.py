@@ -14,6 +14,7 @@ def rc_date_cumulative_deriv_rate_transform(label, asset_df) -> Plottable:
 def cumulative_percentage_deriv(rates: []):
     max_ = max(rates)
     y = list(cumulative(derive_percentage(rates, max_)))
+    # y = list(derive(derive_percentage(rates, max_)))
     return y
 
 

@@ -51,6 +51,9 @@ class WindowPlot(Plot):
         self.max_val = y_max if self.max_val is None else max(self.max_val, y_max)
         self.ax.plot(x, y, label=label)
         self.ax.legend()
+
+        self.ax.plot(x, [y[-1]] * len(x), label=label + "_END")
+        # self.ax.hlines(y=y[-1], xmin=0, xmax=len(x), linestyles='--')
         if do_show:
             self.show()
 

@@ -194,7 +194,10 @@ class InMemoryRatesCollection(RatesCollection):
         return InMemoryRatesCollection(self._df.append(other_rates_collection.df()))
 
     def to_csv(self, file_path: str):
-        return self._df.to_csv(file_path)
+        assets = self.get_assets()
+        for asset, asset_df in assets:
+            print(asset_df.to_csv(file_path))
+            print("")
 
     def get(self, index=0):
         return self._df.iloc[index]

@@ -29,6 +29,20 @@ def derive_percentage(iter: Iterator, max_: float = None):
         yield percentage
 
 
+def derive(iter: Iterator):
+    previous = None
+    iter_ = iter
+    for current in iter_:
+        if current is None:
+            diff = None
+        elif previous is None:
+            diff = 0
+        else:
+            diff = current - previous
+        previous = current
+        yield diff
+
+
 def multiply(iter1: Iterator, iter2: Iterator):
     for v1, v2 in zip(iter1, iter2):
         if v1 is not None and v2 is None:
